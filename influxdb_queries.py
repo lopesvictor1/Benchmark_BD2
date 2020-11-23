@@ -10,14 +10,13 @@ import logging
 import subprocess
 
 
-DEFAULT_SUPPLIERS = 100
-DEFAULT_PARTS = 100
-DEFAULT_BATCH_SIZE = 5000
+DEFAULT_SUPPLIERS = 5000
+DEFAULT_PARTS = 1000
 
 
 parts_colors = ["red", "green", "blue", "black", "white"]
 
-def insert_suppliers(client, b, suppliers):
+def insert_suppliers(client, suppliers, b):
     data = []
     for i in range(suppliers):
         sname = "Supplier {}".format(i)
@@ -34,17 +33,16 @@ def insert_suppliers(client, b, suppliers):
     return (end - start)
 
 
-def insert_parts(client, b, parts):
+def insert_parts(client, parts, b):
     data = []
     for i in range(parts):
         pname = "Part {}".format(i)
-        for j in range(3):
-            color = parts_colors[random.randint(0, len(parts_colors)-1)]
-            di_data = {"measurement": "Parts",
-                        "tags": {"pid" : i},
-                        "time":0,
-                        "fields" : {"pname":pname, "color": color}}
-            data.append(di_data)
+        color = parts_colors[random.randint(0, len(parts_colors)-1)]
+        di_data = {"measurement": "Parts",
+                    "tags": {"pid" : i},
+                    "time":0,
+                    "fields" : {"pname":pname, "color": color}}
+        data.append(di_data)
     start = time.time()*1000
     client.write_points(data, batch_size=b)
     end = time.time()*1000
@@ -52,8 +50,7 @@ def insert_parts(client, b, parts):
     return (end - start)
 
 
-def insert_catalog(client, b, parts, suppliers):
-    print("insert_catalog: entrei aqui")
+def insert_catalog(client, parts, suppliers, b):
     data = []
     for i in range(parts):
         for j in range(suppliers):
@@ -72,36 +69,69 @@ def insert_catalog(client, b, parts, suppliers):
     return (end - start)
 
 
-def update_catalog(client):
-    x = 10
+def update_catalog(client, parts, suppliers, b):
+    sid = suppliers // 2
+    start = time.time()*1000
+    data = []
+    i = 0
+    for i in range(parts):
+        query = client.query("SELECT cost FROM Catalog WHERE pid = '{}' AND sid = '{}'".format(i, sid))
+        x = list(query.get_points())
+        if x:
+            cost = x[0]['cost'] + 1
+            di_data = {"measurement": "Catalog",
+                        "tags": {"sid" : sid, "pid" : i},
+                        "time": 0,
+                        "fields" : {"cost" : cost}}
+            data.append(di_data)
+    client.write_points(data, batch_size=b)
+    end = time.time()*1000
+    return (end - start)
+
+def delete_catalog(client):
+    start = time.time() * 1000
+    client.delete_series(database='stock', measurement='Catalog')
+    end = time.time() * 1000
+    return (end - start)
 
 
 def main():
-    print("main: teste")
     parser = argparse.ArgumentParser(description='InfluxDB queries script')
     parser.add_argument("--suppliers", "-s", help="Number of suppliers", default=DEFAULT_SUPPLIERS, type=int)
     parser.add_argument("--parts", "-p", help="Number of parts", default=DEFAULT_PARTS, type=int)
-    parser.add_argument("--batch_size", "-b", help="Batch size of insertions", default=DEFAULT_BATCH_SIZE, type=int)
+    #parser.add_argument("--batch_size", "-b", help="Batch size of insertions", default=DEFAULT_BATCH_SIZE, type=int)
 
     args = parser.parse_args()
 
     client = InfluxDBClient(host='localhost', port=8086)
 
     #overwrites old database
-    client.drop_database("ProbeMon")
-    client.create_database("ProbeMon")
+    client.drop_database("stock")
+    client.create_database("stock")
 
     #use recreated database
-    client.switch_database("ProbeMon")
+    client.switch_database("stock")
 
-    time_insertion_supplier = insert_suppliers(client, args.suppliers, args.batch_size)
-    time_insertion_parts = insert_parts(client, args.parts, args.batch_size)
-    time_insertion_catalog = insert_catalog(client, args.batch_size, args.parts, args.suppliers)
-    
-    
-    time_insertion = time_insertion_supplier + time_insertion_parts + time_insertion_catalog
-    print(time_insertion)
+    #time_insertion_supplier = insert_suppliers(client, args.suppliers, args.batch_size)
+    #time_insertion_parts = insert_parts(client, args.parts, args.batch_size)
+    #time_insertion_catalog = insert_catalog(client, args.batch_size, args.parts, args.suppliers)
+    #time_insertion = time_insertion_supplier + time_insertion_parts + time_insertion_catalog
+    catalog_insertions = args.parts*args.suppliers
+    if catalog_insertions > 50000:
+        batch_size = catalog_insertions // 50
+    else:
+        batch_size = catalog_insertions // 25
 
+    insert_suppliers(client, args.suppliers, batch_size)
+    insert_parts(client, args.parts, batch_size)
+
+    time_insertion = insert_catalog(client, args.parts, args.suppliers, batch_size)
+
+    time_update = update_catalog(client, args.parts, args.suppliers, batch_size)
+
+    time_delete = delete_catalog(client)
+
+    print("InfluxDB;{};{};{};{};{};".format(catalog_insertions, time_insertion, time_update, time_delete, batch_size))
 
 
 if __name__ == '__main__':

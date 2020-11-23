@@ -16,10 +16,8 @@ import shlex
 
 DEFAULT_SUPPLIERS = 100
 DEFAULT_PARTS = 100
-DEFAULT_BATCH_SIZE = 5000
 
-supplier_address = ["St. 0", "St. 1", "St. 2", "St. 3", "St. 4", "St. 5", "St. 6", "St. 7", "St. 8", "St. 9"]
-parts_colors = ["red", "green", "blue", "black", "white", "pink"]
+parts_colors = ["red", "green", "blue", "black", "white"]
 
 class Database:
     def __init__(self):
@@ -71,7 +69,7 @@ class Database:
         for i in range(suppliers):
             sid = i
             sname = "Supplier {}".format(i)
-            address = supplier_address[random.randint(0, len(supplier_address)-1)] 
+            address = "Av {}, number {}".format(random.randint(0, suppliers), random.randint(0, 1000))
             row = [sid, sname, address]
             data.append(row)
         args_str = ','.join(cur.mogrify("(%s,%s,%s)", x).decode("utf-8") for x in data)
@@ -126,21 +124,50 @@ class Database:
         return (end - start) #time in ms
 
 
+    def update_catalog(self, parts, suppliers):
+        cur = self.conn.cursor()
 
+        data = []
+        sid = 0#suppliers // 2
+
+        start = time.time() * 1000 
+        for i in range(parts):
+            pid = i
+            cur.execute("UPDATE Catalog SET cost = 1 WHERE pid = " + str(pid) + " AND sid = " + str(sid) + ";")
+            #cur.execute("UPDATE Catalog SET cost = 1 WHERE pid = 1 AND sid = 1;")
+            self.conn.commit()
+        end = time.time() * 1000
+
+        return (end - start)
+        
+            
+    def delete_catalog(self):
+        cur = self.conn.cursor()
+
+        data = []
+        start = time.time() * 1000
+        cur.execute("DELETE FROM Catalog")
+        end = time.time() * 1000
+
+        return (end - start)
 
 def main():
     parser = argparse.ArgumentParser(description='InfluxDB queries script')
     parser.add_argument("--suppliers", "-s", help="Number of suppliers", default=DEFAULT_SUPPLIERS, type=int)
     parser.add_argument("--parts", "-p", help="Number of parts", default=DEFAULT_PARTS, type=int)
 
-
     args = parser.parse_args()
+    catalog_insertions = args.parts*args.suppliers
 
     db = Database()
     db.insert_parts(args.parts)
     db.insert_suppliers(args.suppliers)
-    db.insert_catalog(args.parts, args.suppliers)
+    time_insertion = db.insert_catalog(args.parts, args.suppliers)
+    time_update = db.update_catalog(args.parts, args.suppliers)
+    time_delete = db.delete_catalog()
 
+    x = "X"
+    print("PostgreSQL;{};{};{};{};{};".format(catalog_insertions, time_insertion, time_update, time_delete, x))
 
 
 if __name__ == "__main__":
