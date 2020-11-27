@@ -129,7 +129,7 @@ class Database:
         cur = self.conn.cursor()
 
         data = []
-        sid = 0#suppliers // 2
+        sid = suppliers // 2
 
         start = time.time() * 1000 
         for i in range(parts):
