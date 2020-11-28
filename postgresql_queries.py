@@ -54,7 +54,8 @@ class Database:
         cur.execute(query)
 
         query = sql.SQL("create table if not exists Catalog \
-        (sid SERIAL NOT NULL, pid INT NOT NULL, cost INT, PRIMARY KEY(sid, pid), FOREIGN KEY(sid) REFERENCES Parts(pid))")
+        (sid SERIAL NOT NULL, pid INT NOT NULL, cost INT, PRIMARY KEY(sid, pid), \
+        FOREIGN KEY(sid) REFERENCES Suppliers(sid), FOREIGN KEY(pid) REFERENCES Parts(pid))")
         cur.execute(query)
 
         self.conn.commit()
@@ -128,7 +129,7 @@ class Database:
         cur = self.conn.cursor()
 
         data = []
-        sid = 0#suppliers // 2
+        sid = suppliers // 2
 
         start = time.time() * 1000 
         for i in range(parts):
@@ -163,11 +164,11 @@ def main():
     db.insert_parts(args.parts)
     db.insert_suppliers(args.suppliers)
     time_insertion = db.insert_catalog(args.parts, args.suppliers)
-    time_update = db.update_catalog(args.parts, args.suppliers)
-    time_delete = db.delete_catalog()
+    #time_update = db.update_catalog(args.parts, args.suppliers)
+    #time_delete = db.delete_catalog()
 
-    x = "X"
-    print("PostgreSQL;{};{};{};{};{};".format(catalog_insertions, time_insertion, time_update, time_delete, x))
+    #x = "X"
+    #print("PostgreSQL;{};{};{};{};{};".format(catalog_insertions, time_insertion, time_update, time_delete, x))
 
 
 if __name__ == "__main__":
