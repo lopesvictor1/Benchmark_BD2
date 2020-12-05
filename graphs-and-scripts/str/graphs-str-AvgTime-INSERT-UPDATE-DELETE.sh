@@ -8,13 +8,13 @@ do
 		outTemp="avg-time-database-$database-size-$size.dat"
 
 		avgINSERT=$(awk --field-separator=";" -v num=${size} -v db=${database} '$1==db && $2==num {sum+=$3; count+=1} END {print sum/count}' \
-		../out.txt)
+		../../out_str.txt)
 
 		avgUPDATE=$(awk --field-separator=";" -v num=${size} -v db=${database} '$1==db && $2==num {sum+=$4; count+=1} END {print sum/count}' \
-		../out.txt)
+		../../out_str.txt)
 
 		avgDELETE=$(awk --field-separator=";" -v num=${size} -v db=${database} '$1==db && $2==num {sum+=$5; count+=1} END {print sum/count}' \
-		../out.txt)
+		../../out_str.txt)
 
 		echo $avgINSERT $avgUPDATE $avgDELETE > $outTemp
 	done
@@ -27,12 +27,12 @@ do
 	allPostgreSQL=$(cat avg-time-database-PostgreSQL-size-$size.dat)
 
 	string=$(echo "$size $allIDB $allPostgreSQL")
-	echo $string >> AVG-DB.out
+	echo $string >> AVG-STR-DB.out
 
 	rm avg-time-database-InfluxDB-size-$size.dat
 	rm avg-time-database-PostgreSQL-size-$size.dat
 done
 
-printf "%.0e\t%s\t%s\t%s\t%s\t%s\t%s\n" $(cat AVG-DB.out) > AVG-DB.out #format lines
-sed -i '1 i\# of Operations IDB-avgINSERT IDB-avgUPDATE IDB-avgDELETE PostgreSQL-avgINSERT PostgreSQL-avgUPDATE PostgreSQL-avgDELETE\' AVG-DB.out
-sed -i 's/e+0/E+/' AVG-DB.out
+printf "%.0e\t%s\t%s\t%s\t%s\t%s\t%s\n" $(cat AVG-STR-DB.out) > AVG-STR-DB.out #format lines
+sed -i '1 i\# of Operations IDB-avgINSERT IDB-avgUPDATE IDB-avgDELETE PostgreSQL-avgINSERT PostgreSQL-avgUPDATE PostgreSQL-avgDELETE\' AVG-STR-DB.out
+sed -i 's/e+0/E+/' AVG-STR-DB.out
