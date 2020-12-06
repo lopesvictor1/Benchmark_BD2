@@ -24,5 +24,5 @@ set style line 3 lw 3 ps 2.5 lc rgb "#000000"
 set style line 2 lw 3 ps 2.5 lc rgb "#000000" 
 set style line 16 lw 3 ps 2.5 lc rgb "#000000" 
 
-plot 'AVG-STR-DB.out' using 2:xtic(1) title 'InfluxDB' fs pattern 4 lt -1, \
-'' using 5:xtic(1) title 'PostgreSQL' fs pattern 2 lt -1
+plot 'AVG-STR-DB.out' using 2:xtic(1) title 'InfluxDB(str)' fs pattern 4 lt -1, \
+'' using 5:xtic(1) title 'PostgreSQL(str)' fs pattern 2 lt -1

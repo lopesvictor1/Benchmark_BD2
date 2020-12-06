@@ -1,7 +1,6 @@
 set encoding iso_8859_1
 set terminal postscript eps enhanced color butt "Times-Roman" 36
-set output 'graph2-int-AvgDB_avgUPDATE.eps'
-
+set output 'graph2-int-str-AvgDB_avgUPDATE-PostgreSQL.eps'
 
 set style data histogram
 set xlabel '# de Linhas' font "Times-Roman,42" 
@@ -23,5 +22,5 @@ set style line 3 lw 3 ps 2.5 lc rgb "#000000"
 set style line 2 lw 3 ps 2.5 lc rgb "#000000" 
 set style line 16 lw 3 ps 2.5 lc rgb "#000000" 
 
-plot 'AVG-INT-DB.out' using 3:xtic(1) title 'InfluxDB(int)' fs pattern 4 lt -1, \
-'' using 6:xtic(1) title 'PostgreSQL(int)' fs pattern 2 lt -1
+plot 'AVG-INT-DB.out' using 6:xtic(1) title 'PostgreSQL(int)' fs pattern 4 lt -1, \
+     'AVG-STR-DB.out' using 6:xtic(1) title 'PostgreSQL(str)' fs pattern 2 lt -1
